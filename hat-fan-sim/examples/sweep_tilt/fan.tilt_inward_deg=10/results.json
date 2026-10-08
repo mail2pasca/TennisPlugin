@@ -1,0 +1,219 @@
+{
+  "config": {
+    "name": "V1 23-inch ring-fan hat fan.tilt_inward_deg=10",
+    "head": {
+      "circumference": 0.584,
+      "length_width_ratio": 1.26,
+      "top_above_band": 0.1,
+      "chin_below_band": 0.16,
+      "nose_length": 0.022,
+      "include_torso": true,
+      "shoulder_half_width": 0.22,
+      "torso_half_depth": 0.12,
+      "shoulder_top_below_band": 0.24,
+      "stl": null,
+      "stl_scale": 0.001,
+      "stl_offset": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "hat": {
+      "crown_clearance": 0.012,
+      "crown_height": 0.13,
+      "brim_thickness": 0.035,
+      "brim_outer_radius": 0.19,
+      "stl": null,
+      "stl_scale": 0.001,
+      "stl_offset": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "fan": {
+      "inner_radius": 0.125,
+      "outer_radius": 0.175,
+      "exit_speed": 2.5,
+      "direction": "down",
+      "tilt_inward_deg": 10,
+      "swirl_ratio": 0.3,
+      "active_arc_deg": 360.0
+    },
+    "env": {
+      "wind": [
+        0,
+        0,
+        0
+      ],
+      "kinematic_viscosity": 1.5e-05
+    },
+    "domain": {
+      "dx": 0.012,
+      "half_width": 0.3,
+      "z_min": -0.5,
+      "z_max": 0.24
+    },
+    "solver": {
+      "lattice_speed": 0.08,
+      "min_lattice_viscosity": 0.002,
+      "smagorinsky": 0.17,
+      "sim_time": 0.8,
+      "average_from": 0.4,
+      "report_every": 5000
+    },
+    "face": {
+      "probe_offset": 0.015,
+      "perceptible": 0.2,
+      "cooling": 0.5,
+      "strong": 1.0
+    }
+  },
+  "result": {
+    "name": "V1 23-inch ring-fan hat fan.tilt_inward_deg=10",
+    "headline": "YES - most of the face gets a cooling breeze",
+    "face_mean_speed": 0.72196,
+    "face_effective_speed": 1.03654,
+    "face_max_speed": 2.54358,
+    "face_fraction_perceptible": 0.85343,
+    "face_fraction_cooling": 0.65721,
+    "face_feel": "cooling breeze",
+    "fan_exit_speed": 2.5,
+    "fan_open_area_m2": 0.04781,
+    "fan_flow_m3s": 0.11952,
+    "fan_flow_cfm": 253.24854,
+    "probes": {
+      "forehead": {
+        "position_m": [
+          0.1211,
+          0.0,
+          -0.025
+        ],
+        "mean_speed": 1.12363,
+        "rms_fluctuation": 0.01001,
+        "velocity": [
+          -0.24516,
+          0.2561,
+          -1.05637
+        ],
+        "feel": "strong breeze"
+      },
+      "left eye": {
+        "position_m": [
+          0.1132,
+          0.032,
+          -0.05
+        ],
+        "mean_speed": 1.1186,
+        "rms_fluctuation": 0.00969,
+        "velocity": [
+          -0.33197,
+          0.40226,
+          -0.97402
+        ],
+        "feel": "strong breeze"
+      },
+      "right eye": {
+        "position_m": [
+          0.1132,
+          -0.032,
+          -0.05
+        ],
+        "mean_speed": 1.03005,
+        "rms_fluctuation": 0.00993,
+        "velocity": [
+          -0.0769,
+          0.09806,
+          -1.01741
+        ],
+        "feel": "strong breeze"
+      },
+      "nose tip": {
+        "position_m": [
+          0.143,
+          0.0,
+          -0.08
+        ],
+        "mean_speed": 2.55983,
+        "rms_fluctuation": 0.01916,
+        "velocity": [
+          0.19715,
+          0.70078,
+          -2.45398
+        ],
+        "feel": "strong breeze"
+      },
+      "left cheek": {
+        "position_m": [
+          0.1041,
+          0.045,
+          -0.09
+        ],
+        "mean_speed": 1.20376,
+        "rms_fluctuation": 0.01519,
+        "velocity": [
+          -0.24439,
+          0.35983,
+          -1.11907
+        ],
+        "feel": "strong breeze"
+      },
+      "right cheek": {
+        "position_m": [
+          0.1041,
+          -0.045,
+          -0.09
+        ],
+        "mean_speed": 0.93088,
+        "rms_fluctuation": 0.01688,
+        "velocity": [
+          0.0071,
+          0.02869,
+          -0.92491
+        ],
+        "feel": "cooling breeze"
+      },
+      "mouth": {
+        "position_m": [
+          0.1169,
+          0.0,
+          -0.115
+        ],
+        "mean_speed": 0.12414,
+        "rms_fluctuation": 0.01753,
+        "velocity": [
+          0.11675,
+          0.02257,
+          0.02846
+        ],
+        "feel": "not felt"
+      },
+      "chin": {
+        "position_m": [
+          0.0916,
+          0.0,
+          -0.145
+        ],
+        "mean_speed": 0.19466,
+        "rms_fluctuation": 0.01522,
+        "velocity": [
+          0.10398,
+          0.08757,
+          0.13001
+        ],
+        "feel": "not felt"
+      }
+    },
+    "solver": {
+      "cells": 163863,
+      "steps": 2206,
+      "dt": 0.00036,
+      "tau0": 0.506,
+      "nu_effective": 0.00079,
+      "fan_peak_speed": 2.64704,
+      "runtime_s": 25.15109,
+      "averaged_steps": 1104
+    }
+  }
+}

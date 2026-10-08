@@ -11,6 +11,28 @@ whole face.
 
 ![example](examples/v1_baseline/summary.png)
 
+## First results for V1 (fan blowing down at 2.5 m/s, still air)
+
+| design | mean air speed at face | face area cooled (> 0.5 m/s) | verdict |
+|---|---|---|---|
+| V1 as drawn, 0° tilt (8 mm grid) | 0.52 m/s | 33% | partly: the jet hits the nose, but the mouth and chin are in a calm pocket |
+| louvers 10° inward | 0.72 m/s | 66% | yes |
+| louvers 20° inward | 0.96 m/s | 75% | yes |
+| louvers 30° inward | 1.20 m/s | 79% | yes |
+
+The tilt sweep used the quick 12 mm grid.
+
+- With straight-down blades, the air curtain falls 2–5 cm in front of the
+  face. It strikes the nose and only brushes the forehead and eyes.
+- Angling the exit 10–20° inward is the single biggest improvement.
+- The **mouth and chin stay below 0.25 m/s in every case**, because the nose
+  and upper lip shelter them.
+- Walking at 1.3 m/s gives 0.69 m/s at the face with the fan off, and
+  1.00 m/s with it on. Some of the benefit is therefore just the wind; the
+  fan matters most when you are standing still.
+
+See `examples/` for the figures (`sweep_tilt/sweep.png`, `sweep_wind/sweep.png`).
+
 ## Quick start
 
 ```bash
