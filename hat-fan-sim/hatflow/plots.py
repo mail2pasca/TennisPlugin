@@ -122,6 +122,7 @@ def summary_figure(path, cfg, geo, u_mean, result):
         f"Fan: {cfg.fan.exit_speed} m/s {cfg.fan.direction}, tilt {cfg.fan.tilt_inward_deg} deg inward,",
         f"     swirl {cfg.fan.swirl_ratio}, arc {cfg.fan.active_arc_deg} deg",
         f"     open area {r['fan_open_area_m2']*1e4:.0f} cm^2, flow {r['fan_flow_cfm']:.0f} CFM",
+        f"Brim front droop: {cfg.hat.front_droop_deg} deg over {cfg.hat.droop_arc_deg} deg arc",
         f"Wind: {tuple(cfg.env.wind)} m/s",
         "", "Probe speeds (m/s):",
     ]
@@ -139,11 +140,13 @@ def geometry_figure(path, cfg, geo):
     g = geo.grid
     fig, axs = plt.subplots(1, 3, figsize=(15, 5.5))
     j = int(np.argmin(np.abs(g.y)))
-    k = int(np.argmin(np.abs(g.z - 0.5 * cfg.hat.brim_thickness)))
+    band = (g.z > -0.08) & (g.z < cfg.hat.brim_thickness + 0.01)
+    sub = geo.flags[:, :, band]
+    plan = np.where((sub == FAN).any(2), FAN, np.where((sub == SOLID).any(2), SOLID, 0))
     kk = int(np.argmin(np.abs(g.z - geo.head.nose_z)))
     for ax, sl, ext, title, lab in [
         (axs[0], geo.flags[:, j, :], (g.x, g.z), "side (y=0)", ("x", "z")),
-        (axs[1], geo.flags[:, :, k], (g.x, g.y), "top, fan layer", ("x", "y")),
+        (axs[1], plan, (g.x, g.y), "plan view of brim + fan ring", ("x", "y")),
         (axs[2], geo.flags[:, :, kk], (g.x, g.y), "top, nose height", ("x", "y")),
     ]:
         a, b = ext

@@ -131,6 +131,20 @@ def _stl_mask(path, scale, offset, X, Y, Z):
     return mask
 
 
+def _droop_weight(theta, arc_deg):
+    """1 at the front centre, easing (cos^2) to 0 at +/- arc/2."""
+    half = math.radians(max(arc_deg, 1e-6)) / 2
+    w = np.cos(0.5 * math.pi * theta / half) ** 2
+    return np.where(np.abs(theta) < half, w, 0.0)
+
+
+def _droop_weight_deriv(theta, arc_deg):
+    half = math.radians(max(arc_deg, 1e-6)) / 2
+    k = 0.5 * math.pi / half
+    d = -k * np.sin(2 * k * theta)
+    return np.where(np.abs(theta) < half, d, 0.0)
+
+
 def build_geometry(cfg: SimConfig) -> Geometry:
     grid = make_grid(cfg)
     X, Y, Z = grid.mesh()
@@ -148,9 +162,19 @@ def build_geometry(cfg: SimConfig) -> Geometry:
 
     # --- hat ----------------------------------------------------------------
     in_ring = (R >= fan.inner_radius) & (R <= fan.outer_radius)
-    in_brim_z = (Z >= 0.0) & (Z <= hat.brim_thickness)
-    theta = np.degrees(np.arctan2(Y, X))  # 0 deg = straight ahead (face)
-    in_arc = np.abs(theta) <= fan.active_arc_deg / 2 + 1e-9
+    theta = np.arctan2(Y, X)  # 0 = straight ahead (face)
+    in_arc = np.abs(np.degrees(theta)) <= fan.active_arc_deg / 2 + 1e-9
+
+    # Brim mid-surface. A front droop bends the brim (and the blade ring in
+    # it) downward outboard of the hinge radius, fading smoothly to flat at
+    # the edges of droop_arc_deg.
+    zc = 0.5 * hat.brim_thickness
+    alpha = np.radians(hat.front_droop_deg) * _droop_weight(theta, hat.droop_arc_deg)
+    lever = np.clip(R - hat.droop_hinge_radius, 0, None)
+    tan_a = np.tan(alpha)
+    z_mid = zc - lever * tan_a
+    in_brim_z = np.abs(Z - z_mid) <= 0.5 * hat.brim_thickness / np.cos(alpha)
+
     if cfg.hat.stl:
         hat_solid = _stl_mask(cfg.hat.stl, cfg.hat.stl_scale, cfg.hat.stl_offset, X, Y, Z)
     else:
@@ -168,28 +192,39 @@ def build_geometry(cfg: SimConfig) -> Geometry:
 
     flags = np.where(solid, SOLID, FLUID).astype(np.uint8)
 
-    # --- fan actuator layer -------------------------------------------------
-    zmid = 0.5 * hat.brim_thickness
-    kmid = int(np.argmin(np.abs(grid.z - zmid)))
-    layer = np.zeros_like(solid)
-    layer[:, :, kmid] = True
-    fan_cells = layer & in_ring & in_arc & ~solid
+    # --- fan actuator sheet (follows the bent brim) -----------------------
+    sheet = np.abs(Z - z_mid) <= 0.5 * grid.dx * (1.0 + np.abs(tan_a)) + 1e-9
+    fan_cells = sheet & in_ring & in_arc & ~solid
     flags[fan_cells] = FAN
 
-    fan_vel = np.zeros((3,) + grid.shape, dtype=np.float32)
-    sign = -1.0 if fan.direction == "down" else 1.0
     if fan.direction not in ("down", "up"):
         raise ValueError("fan.direction must be 'down' or 'up'")
-    tilt = math.radians(fan.tilt_inward_deg)
-    u_ax = fan.exit_speed
-    u_in = fan.exit_speed * math.tan(tilt)          # inward radial component
-    u_sw = fan.swirl_ratio * fan.exit_speed          # tangential component
     Rs = np.where(R > 0, R, 1.0)
-    er_x, er_y = X / Rs, Y / Rs
-    et_x, et_y = -er_y, er_x
-    fan_vel[0][fan_cells] = (-u_in * er_x + u_sw * et_x)[fan_cells]
-    fan_vel[1][fan_cells] = (-u_in * er_y + u_sw * et_y)[fan_cells]
-    fan_vel[2][fan_cells] = sign * u_ax
+    er = np.stack([X / Rs, Y / Rs, np.zeros_like(R)])
+    et = np.stack([-Y / Rs, X / Rs, np.zeros_like(R)])
+    ez = np.array([0.0, 0.0, 1.0])[:, None, None, None]
+    # surface slope: dz/dr and (1/r) dz/dtheta of the brim mid-surface
+    dz_dr = -np.where(R > hat.droop_hinge_radius, tan_a, 0.0)
+    dalpha = np.radians(hat.front_droop_deg) * _droop_weight_deriv(theta, hat.droop_arc_deg)
+    dz_dt = -lever / np.cos(alpha) ** 2 * dalpha / Rs
+    n_up = ez - dz_dr * er - dz_dt * et
+    n_up /= np.linalg.norm(n_up, axis=0)
+    axial = -n_up if fan.direction == "down" else n_up
+    # in-surface direction pointing toward the head (for louver tilt)
+    inward = -er - (-er * n_up).sum(0) * n_up
+    inward /= np.maximum(np.linalg.norm(inward, axis=0), 1e-9)
+    swirl = et - (et * n_up).sum(0) * n_up
+    u = fan.exit_speed
+    vel = (u * axial + u * math.tan(math.radians(fan.tilt_inward_deg)) * inward
+           + fan.swirl_ratio * u * swirl)
+    fan_vel = np.zeros((3,) + grid.shape, dtype=np.float32)
+    for c in range(3):
+        fan_vel[c][fan_cells] = vel[c][fan_cells]
+
+    # open area of the ring = plan-view area / cos(local droop)
+    ring_cols = (in_ring & in_arc)[:, :, 0]
+    cos_cols = np.cos(alpha[:, :, 0])
+    fan_area = float((ring_cols / cos_cols).sum()) * grid.dx ** 2
 
     # --- outer boundary layer -----------------------------------------------
     edge = np.zeros_like(solid)
@@ -201,5 +236,4 @@ def build_geometry(cfg: SimConfig) -> Geometry:
     # The kernel never reads outside the grid because every interior cell's
     # neighbours are inside it.
 
-    fan_area = float(fan_cells.sum()) * grid.dx ** 2
     return Geometry(grid=grid, flags=flags, fan_velocity=fan_vel, head=head, fan_area=fan_area)
