@@ -22,6 +22,21 @@ whole face.
 
 The tilt sweep used the quick 12 mm grid.
 
+**Bending the front of the brim down** (`hat.front_droop_deg`) bends the
+blade ring with it, so the air leaves at an angle toward the face and from
+a lower point. The bend starts at the crown and fades to flat over the
+front 140°. Quick 12 mm grid:
+
+| front droop | mean air speed at face | face area cooled |
+|---|---|---|
+| 0° (flat) | 0.46 m/s | 36% |
+| 10° | 0.60 m/s | 57% |
+| 20° | 0.91 m/s | 69% (1.08 m/s and 71% on the 8 mm grid) |
+| 30° | 1.28 m/s | 80% |
+
+Droop does about the same job as angled louvers, without extra parts in
+the airflow.
+
 - With straight-down blades, the air curtain falls 2–5 cm in front of the
   face. It strikes the nose and only brushes the forehead and eyes.
 - Angling the exit 10–20° inward is the single biggest improvement.
@@ -65,6 +80,9 @@ python -m hatflow run -c configs/v1_23in.json --set fan.tilt_inward_deg=20
 # a weaker motor
 python -m hatflow run -c configs/v1_23in.json --set fan.exit_speed=1.5
 
+# bend the front of the brim (and the blades) down 20 degrees
+python -m hatflow run -c configs/v1_23in.json --set hat.front_droop_deg=20
+
 # blow only from the front 120 degrees of the ring
 python -m hatflow run -c configs/v1_23in.json --set fan.active_arc_deg=120
 
@@ -82,6 +100,7 @@ Key settings (full list in [`hatflow/config.py`](hatflow/config.py)):
 | `fan.tilt_inward_deg` | how far the exit louvers or blades angle the air toward the head |
 | `fan.swirl_ratio` | sideways (tangential) speed the spinning ring adds, divided by the downward speed |
 | `fan.direction` | `down` blows onto the wearer; `up` pulls air up and out of the brim |
+| `hat.front_droop_deg` | bend the front of the brim and its blade ring down; `hat.droop_arc_deg` sets how much of the brim bends, `hat.droop_hinge_radius` where the bend starts |
 | `fan.active_arc_deg` | 360 = full ring; smaller = only a front sector blows |
 | `env.wind` | air moving past the wearer, m/s. Walking forward at 1.3 m/s is `[-1.3, 0, 0]` |
 | `head.circumference` | head girth in metres (0.584 = 23 in) |
