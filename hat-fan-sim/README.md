@@ -109,6 +109,25 @@ Key settings (full list in [`hatflow/config.py`](hatflow/config.py)):
 Coordinates: +x is the direction the wearer faces, +y is the wearer's left,
 +z is up, and z = 0 is the underside of the brim.
 
+## 3D-printable parts
+
+`python -m hatflow cad` generates printable STLs from the same dimensions the
+simulator uses (head size, fan ring radii, brim size, droop):
+
+```bash
+python -m hatflow cad -c configs/v1_23in.json --set hat.droop_deg=20 -o cad/v1_cone20
+```
+
+The output is crown, housing, top grille, rotor (blade ring with a 356-tooth
+module-1 rim gear), and a 12-tooth pinion for an N20 gear motor.
+`quadrants/` holds the housing, grille and rotor cut into 194 × 194 mm pieces
+for 220–256 mm beds. The ready-made set for the recommended 20° cone brim is
+in [`cad/v1_cone20/`](cad/v1_cone20/) (and zipped as `cad/v1_cone20_stl.zip`).
+Treat it as a parametric starting point: print a gear test arc first and tune
+clearances for your printer. Generating parts needs `manifold3d` and `trimesh`.
+
+![section](report/img/section.png)
+
 ## Using your real CAD (STL)
 
 The built-in head and hat are simple shapes sized to your V1 drawings. To

@@ -3,3 +3,5 @@ numba>=0.58
 matplotlib>=3.7
 # optional: load your own head / hat STL files
 trimesh>=4.0
+# optional: generate printable parts (python -m hatflow cad)
+manifold3d>=3.0

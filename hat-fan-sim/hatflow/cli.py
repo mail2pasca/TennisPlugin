@@ -59,6 +59,17 @@ def cmd_geometry(args):
           f"fan open area {geo.fan_area*1e4:.0f} cm^2 -> {path}")
 
 
+def cmd_cad(args):
+    from .cad import export_parts
+
+    cfg = _cfg(args)
+    out = args.out or os.path.join("results", cfg.name, "stl")
+    print(f"building printable parts (droop {cfg.hat.droop_deg} deg) -> {out}/")
+    _, info = export_parts(cfg, out, seg=args.segments, quadrants=not args.no_quadrants)
+    print(f"rotor gear: {info['gear_teeth']} teeth, module 1; pinion 12 teeth at "
+          f"r={info['motor_radius']:.1f} mm (back of hat)")
+
+
 def cmd_sweep(args):
     from .plots import sweep_figure
 
@@ -109,6 +120,12 @@ def main(argv=None):
     sp.add_argument("--param", required=True, help="e.g. fan.tilt_inward_deg")
     sp.add_argument("--values", required=True, nargs="+")
     sp.set_defaults(fn=cmd_sweep)
+
+    sp = sub.add_parser("cad", help="export 3D-printable STL parts for this design")
+    common(sp)
+    sp.add_argument("--segments", type=int, default=256, help="circle resolution")
+    sp.add_argument("--no-quadrants", action="store_true", help="skip bed-sized quadrant splits")
+    sp.set_defaults(fn=cmd_cad)
 
     sp = sub.add_parser("geometry", help="draw the voxel model only (check STL placement)")
     common(sp)
