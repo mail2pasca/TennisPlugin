@@ -149,6 +149,26 @@ def _droop_weight_deriv(theta, arc_deg):
     return np.where(np.abs(theta) < half, d, 0.0)
 
 
+def _pod_mask(cfg, X, Y, Z, R):
+    """Envelope of the printable electronics pod (see cad.py), at the back."""
+    hat = cfg.hat
+    a = math.radians(hat.droop_deg)
+    # world -> local brim frame at azimuth 180 deg
+    dx = -X - hat.droop_hinge_radius
+    dz = Z - 0.5 * hat.brim_thickness
+    u = dx * math.cos(a) - dz * math.sin(a)
+    v = -Y
+    w = dx * math.sin(a) + dz * math.cos(a)
+    to_u = lambda r: (r - hat.droop_hinge_radius) / math.cos(a)  # noqa: E731
+    r_edge = hat.brim_outer_radius
+    r_motor = cfg.fan.outer_radius + 0.011
+    half_w, w_bot, w_top, lid_h, out = 0.046, -0.0154, 0.016, 0.034, 0.060
+    side = np.abs(v) <= half_w
+    tray = side & (u >= to_u(r_edge)) & (u <= to_u(r_edge + out)) & (w >= w_bot) & (w <= w_top) & (R >= r_edge)
+    lid = side & (u >= to_u(r_motor - 0.016)) & (u <= to_u(r_edge + out)) & (w >= w_top) & (w <= w_top + lid_h)
+    return tray | lid
+
+
 def build_geometry(cfg: SimConfig) -> Geometry:
     grid = make_grid(cfg)
     X, Y, Z = grid.mesh()
@@ -192,6 +212,8 @@ def build_geometry(cfg: SimConfig) -> Geometry:
         hat_solid = crown | brim
     # carve the active blade ring out of the brim so air can pass through it
     hat_solid &= ~(in_ring & in_arc & in_brim_z)
+    if hat.electronics_pod:
+        hat_solid |= _pod_mask(cfg, X, Y, Z, R)
     solid |= hat_solid
 
     flags = np.where(solid, SOLID, FLUID).astype(np.uint8)

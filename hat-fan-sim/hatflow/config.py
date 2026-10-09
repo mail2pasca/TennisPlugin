@@ -43,6 +43,9 @@ class HatConfig:
     # that only makes sense for a fixed (non-rotating) brim shell or louvers.
     droop_arc_deg: float = 360.0
     droop_hinge_radius: float = 0.115  # where the bend starts, from the hat centre
+    # Battery/motor pod at the back of the brim (same shape as the printable
+    # pod_tray + pod_lid parts). It blocks a little of the intake at the back.
+    electronics_pod: bool = False
     stl: str | None = None             # optional watertight hat STL (fan annulus is carved out)
     stl_scale: float = 0.001
     stl_offset: tuple = (0.0, 0.0, 0.0)

@@ -66,7 +66,7 @@ def cmd_cad(args):
     out = args.out or os.path.join("results", cfg.name, "stl")
     print(f"building printable parts (droop {cfg.hat.droop_deg} deg) -> {out}/")
     _, info = export_parts(cfg, out, seg=args.segments, quadrants=not args.no_quadrants)
-    print(f"rotor gear: {info['gear_teeth']} teeth, module 1; pinion 12 teeth at "
+    print(f"rotor gear: {info['gear_teeth']} teeth, module 1; pinion {info['pinion_teeth']} teeth at "
           f"r={info['motor_radius']:.1f} mm (back of hat)")
 
 

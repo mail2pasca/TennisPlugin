@@ -1,0 +1,14 @@
+{
+  "name": "V1 20-deg cone brim + electronics pod",
+  "head": {"circumference": 0.584},
+  "hat": {"brim_outer_radius": 0.19, "brim_thickness": 0.035, "droop_deg": 20, "electronics_pod": true},
+  "fan": {
+    "inner_radius": 0.125,
+    "outer_radius": 0.175,
+    "exit_speed": 2.5,
+    "direction": "down",
+    "tilt_inward_deg": 0,
+    "swirl_ratio": 0.3
+  },
+  "env": {"wind": [0, 0, 0]}
+}

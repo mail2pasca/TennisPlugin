@@ -6,10 +6,13 @@ Parts:
   crown          elliptical dome that the head goes into; sits on the housing
   housing        brim tray: head opening plate, inner/outer channel walls,
                  bottom grille, bearing ledge for the rotor, motor notch
-  top_grille     upper grille, screws onto the housing rim, holds the motor
+  top_grille     upper grille, screws onto the housing rim, has the motor pocket
   rotor          blade ring (hub ring + blades + tip ring) with an external
                  spur gear on the rim (module 1)
-  pinion         12-tooth module-1 pinion for an N20 gear motor (3 mm D-shaft)
+  pinion         16-tooth module-1 pinion for a "130" DC motor (2 mm shaft)
+  pod_tray       electronics bay bolted to the back of the housing: 18650 cell,
+                 USB-C charger board, slide switch
+  pod_lid        covers the tray and the motor standing on the top grille
 
 Large parts are also cut into 90-degree quadrants for 220-256 mm print beds.
 This is a parametric starting point for a bench prototype: check fits in your
@@ -35,9 +38,15 @@ BLADES = 24
 BLADE_PITCH_DEG = 35.0
 BLADE_THICK = 1.8
 GEAR_MODULE = 1.0
-PINION_TEETH = 12
+PINION_TEETH = 16       # 356:16 = 22:1 -> ~350-500 rpm ring from a 130 motor
 M3_CLEAR = 3.3
-N20_BODY = (12.2, 10.2)  # N20 gear-motor cross-section + clearance
+M3_PILOT = 2.5
+MOTOR_BODY = (20.4, 15.4)  # "130" DC motor body (20 mm round, 15 mm across flats) + clearance
+MOTOR_SHAFT = 1.95         # press fit on the 2.0 mm shaft
+# electronics pod at the back of the brim (local brim frame, mm)
+POD_HALF_WIDTH = 46.0      # clear of the rim screws at +/-15 deg
+POD_OUT = 60.0             # how far the pod reaches past the brim edge
+POD_LID_HEIGHT = 34.0      # clears the 25 mm motor body standing on the top grille
 
 
 class Brim:
@@ -62,6 +71,21 @@ class Brim:
 
     def zm(self, r):
         return self.zc - max(r - self.hinge, 0.0) * self.tan
+
+
+def _place(brim, m, theta_deg):
+    """Map a part built in the local brim frame (u along the cone outward from
+    the hinge, v tangential, w normal to the brim) onto the hat at azimuth theta."""
+    return m.rotate([0, brim.droop, 0]).translate([brim.hinge, 0, brim.zc]).rotate([0, 0, theta_deg])
+
+
+def _u(brim, r):
+    """Local u coordinate of radius r on the cone."""
+    return (r - brim.hinge) / math.cos(math.radians(brim.droop))
+
+
+def _box(u0, u1, v0, v1, w0, w1):
+    return Manifold.cube([u1 - u0, v1 - v0, w1 - w0]).translate([u0, v0, w0])
 
 
 def _band(brim, r1, r2, zlo, zhi):
@@ -218,18 +242,47 @@ def build_parts(cfg: SimConfig, seg: int = 256):
         _band(b, rin - WALL, rin + 2.0, CHANNEL_HALF, CHANNEL_HALF + GRILLE_DEPTH),  # inner seat
         _band(b, R - 8.0, R, CHANNEL_HALF, CHANNEL_HALF + 3.0),                      # rim
     ] + g_polys, seg) + g_spokes
-    # motor mount: solid pad with a rectangular N20 pocket
-    zt = b.zm(motor_r) + CHANNEL_HALF
-    pad = Manifold.cube([N20_BODY[0] + 8, N20_BODY[1] + 8, 6.0], center=True) \
-        .rotate([0, b.droop, 0]).translate([motor_r, 0, zt + 2.0]).rotate([0, 0, motor_theta])
-    pocket = Manifold.cube([N20_BODY[0], N20_BODY[1], 30.0], center=True).translate([mx, my, zt])
-    top = (top + pad - pocket) - rim_holes
+    # motor mount: rectangular through-pocket for a 130 motor (shaft down)
+    pocket = _place(b, _box(_u(b, motor_r) - MOTOR_BODY[1] / 2, _u(b, motor_r) + MOTOR_BODY[1] / 2,
+                            -MOTOR_BODY[0] / 2, MOTOR_BODY[0] / 2, -5, 40), motor_theta)
+    top = top - pocket - rim_holes
 
     # ---------------- pinion -------------------------------------------------
-    d_shaft = CrossSection([np.array([(1.55 * math.cos(a), 1.55 * math.sin(a))
-                                      for a in np.linspace(0, 2 * math.pi, 40, endpoint=False)])]) \
-        ^ CrossSection.square([3.4, 2.6], center=True).translate([0.0, -0.25])
-    pinion = Manifold.extrude(_gear_outline(PINION_TEETH, GEAR_MODULE) - d_shaft, 10.0)
+    bore = CrossSection.circle(MOTOR_SHAFT / 2, 32)
+    pinion = Manifold.extrude(_gear_outline(PINION_TEETH, GEAR_MODULE) - bore, 10.0)
+
+    # ---------------- electronics pod (back of the brim) --------------------
+    # Tray: bolts to the outside of the housing wall, holds an 18650 cell,
+    # a USB-C charger board and a slide switch. Lid: covers the tray and
+    # reaches inward over the motor standing on the top grille.
+    W = POD_HALF_WIDTH
+    w_bot, w_top = -CHANNEL_HALF - GRILLE_DEPTH, CHANNEL_HALF + 3.0
+    u_wall, u_end = _u(b, R), _u(b, R + POD_OUT)
+    tray = _box(_u(b, R - 10), u_end, -W, W, w_bot, w_top)
+    tray = tray - _box(u_wall + 2.0, u_end - 2.0, -W + 2, W - 2, w_bot + 2.0, w_top + 1)
+    posts, pilots = [], []
+    post_uv = [(pu, pv) for pu in (u_wall + 5.0, u_end - 5.0) for pv in (-W + 5.0, W - 5.0)]
+    for pu, pv in post_uv:  # posts overlap the walls by 1 mm so the union is clean
+        posts.append(Manifold.cylinder(w_top - w_bot - 1.0, 4.0, 4.0, 24).translate([pu, pv, w_bot + 1.0]))
+        pilots.append(Manifold.cylinder(14, M3_PILOT / 2, M3_PILOT / 2, 16).translate([pu, pv, w_top - 13]))
+    tray = tray + _union(posts) - _union(pilots)
+    # USB-C charge port and slide-switch slots in the back wall
+    tray = tray - _box(u_end - 3, u_end + 1, 10, 21, -6, -1.5) - _box(u_end - 3, u_end + 1, -22, -12, -6, -1.5)
+    # two radial M3 bolts through tray and housing wall
+    bolts = _union([Manifold.cylinder(30, M3_CLEAR / 2, M3_CLEAR / 2, 16).rotate([0, 90, 0])
+                    .translate([u_wall - 15, pv, 0.0]) for pv in (-28.0, 28.0)])
+    tray = _place(b, tray - bolts, motor_theta)
+    # the tray hugs the curved housing wall
+    tray = tray - _revolve([_band(b, 0.0, R + 0.3, -60, 60)], seg)
+    housing = housing - _place(b, bolts, motor_theta)
+
+    lid = _box(_u(b, motor_r - 16), u_end, -W, W, w_top, w_top + POD_LID_HEIGHT)
+    lid = lid - _box(_u(b, motor_r - 14), u_end - 2.0, -W + 2, W - 2, w_top - 1, w_top + POD_LID_HEIGHT - 2)
+    for pu, pv in post_uv:
+        lid = lid + Manifold.cylinder(POD_LID_HEIGHT - 1.0, 4.0, 4.0, 24).translate([pu, pv, w_top])
+    for pu, pv in post_uv:
+        lid = lid - Manifold.cylinder(POD_LID_HEIGHT + 2, M3_CLEAR / 2, M3_CLEAR / 2, 16).translate([pu, pv, w_top - 1])
+    lid = _place(b, lid, motor_theta)
 
     # ---------------- crown --------------------------------------------------
     zs = np.linspace(0, 1, 40)
@@ -251,9 +304,10 @@ def build_parts(cfg: SimConfig, seg: int = 256):
         crown = crown - _cyl(M3_CLEAR / 2, 10, ax * math.cos(t), ay * math.sin(t), -2)
     crown = crown.translate([0, 0, b.zm(rin) + plate_hi])
 
-    return dict(crown=crown, housing=housing, top_grille=top, rotor=rotor, pinion=pinion), \
+    return dict(crown=crown, housing=housing, top_grille=top, rotor=rotor, pinion=pinion,
+                pod_tray=tray, pod_lid=lid), \
         dict(gear_teeth=gear_teeth, motor_radius=motor_r, brim_radius=R, droop=b.droop,
-             motor_xy=(mx, my), gear_z0=gear_z0)
+             motor_xy=(mx, my), gear_z0=gear_z0, pinion_teeth=PINION_TEETH)
 
 
 def _to_trimesh(m):
@@ -315,6 +369,7 @@ def export_parts(cfg: SimConfig, out_dir: str, seg: int = 256, quadrants: bool =
     import trimesh
     pin = parts["pinion"].translate([info["motor_xy"][0], info["motor_xy"][1], info["gear_z0"] + 2.0])
     asm = trimesh.util.concatenate([_to_trimesh(m) for m in
-                                    (parts["crown"], parts["housing"], parts["top_grille"], parts["rotor"], pin)])
+                                    (parts["crown"], parts["housing"], parts["top_grille"], parts["rotor"], pin,
+                                     parts["pod_tray"], parts["pod_lid"])])
     asm.export(os.path.join(out_dir, "assembly_preview.stl"))
     return written, info
