@@ -115,11 +115,15 @@ Coordinates: +x is the direction the wearer faces, +y is the wearer's left,
 simulator uses (head size, fan ring radii, brim size, droop):
 
 ```bash
-python -m hatflow cad -c configs/v1_23in.json --set hat.droop_deg=20 -o cad/v1_cone20
+python -m hatflow cad -c configs/v1_cone20_pod.json -o cad/v1_cone20
 ```
 
 The output is crown, housing, top grille, rotor (blade ring with a 356-tooth
-module-1 rim gear), and a 12-tooth pinion for an N20 gear motor.
+module-1 rim gear), a 16-tooth pinion for a "130" DC motor, and an electronics
+pod (tray + lid) bolted to the back of the housing for the motor, an 18650
+cell, a USB-C charger board and a slide switch. The blade ring fills the brim
+channel, so nothing else can go inside the brim. Use
+`configs/v1_cone20_pod.json` to include the pod in the airflow simulation.
 `quadrants/` holds the housing, grille and rotor cut into 194 × 194 mm pieces
 for 220–256 mm beds. The ready-made set for the recommended 20° cone brim is
 in [`cad/v1_cone20/`](cad/v1_cone20/) (and zipped as `cad/v1_cone20_stl.zip`).
