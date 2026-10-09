@@ -1,4 +1,4 @@
-# V1 23-inch ring-fan hat hat.front_droop_deg=0: airflow to the face
+# V1 23-inch ring-fan hat hat.droop_deg=0: airflow to the face
 
 **PARTLY - air reaches the face but it is weak**
 
@@ -28,4 +28,4 @@
 
 ## Solver
 
-163,863 cells at 12 mm, 2176 steps (0.8 s simulated, averaged over the last 0.40 s), runtime 27 s.
+163,863 cells at 12 mm, 2176 steps (0.8 s simulated, averaged over the last 0.40 s), runtime 8 s.
