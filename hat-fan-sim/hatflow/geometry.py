@@ -132,13 +132,17 @@ def _stl_mask(path, scale, offset, X, Y, Z):
 
 
 def _droop_weight(theta, arc_deg):
-    """1 at the front centre, easing (cos^2) to 0 at +/- arc/2."""
+    """1 at the front centre, easing (cos^2) to 0 at +/- arc/2; 360 = uniform cone."""
+    if arc_deg >= 360:
+        return np.ones_like(theta)
     half = math.radians(max(arc_deg, 1e-6)) / 2
     w = np.cos(0.5 * math.pi * theta / half) ** 2
     return np.where(np.abs(theta) < half, w, 0.0)
 
 
 def _droop_weight_deriv(theta, arc_deg):
+    if arc_deg >= 360:
+        return np.zeros_like(theta)
     half = math.radians(max(arc_deg, 1e-6)) / 2
     k = 0.5 * math.pi / half
     d = -k * np.sin(2 * k * theta)
@@ -169,7 +173,7 @@ def build_geometry(cfg: SimConfig) -> Geometry:
     # it) downward outboard of the hinge radius, fading smoothly to flat at
     # the edges of droop_arc_deg.
     zc = 0.5 * hat.brim_thickness
-    alpha = np.radians(hat.front_droop_deg) * _droop_weight(theta, hat.droop_arc_deg)
+    alpha = np.radians(hat.droop_deg) * _droop_weight(theta, hat.droop_arc_deg)
     lever = np.clip(R - hat.droop_hinge_radius, 0, None)
     tan_a = np.tan(alpha)
     z_mid = zc - lever * tan_a
@@ -205,7 +209,7 @@ def build_geometry(cfg: SimConfig) -> Geometry:
     ez = np.array([0.0, 0.0, 1.0])[:, None, None, None]
     # surface slope: dz/dr and (1/r) dz/dtheta of the brim mid-surface
     dz_dr = -np.where(R > hat.droop_hinge_radius, tan_a, 0.0)
-    dalpha = np.radians(hat.front_droop_deg) * _droop_weight_deriv(theta, hat.droop_arc_deg)
+    dalpha = np.radians(hat.droop_deg) * _droop_weight_deriv(theta, hat.droop_arc_deg)
     dz_dt = -lever / np.cos(alpha) ** 2 * dalpha / Rs
     n_up = ez - dz_dr * er - dz_dt * et
     n_up /= np.linalg.norm(n_up, axis=0)

@@ -36,9 +36,12 @@ class HatConfig:
     crown_height: float = 0.13         # crown top above the band
     brim_thickness: float = 0.035      # depth of the fan housing / brim
     brim_outer_radius: float = 0.19
-    # Bend the front of the brim (and its blade ring) downward. 0 = flat.
-    front_droop_deg: float = 0.0
-    droop_arc_deg: float = 140.0       # how much of the brim is bent; eases to flat at the ends
+    # Bend the brim (and its blade ring) downward into a shallow cone. 0 = flat.
+    droop_deg: float = 0.0
+    # 360 = the whole brim bends evenly (a cone) - required if the blade ring
+    # itself rotates. Smaller values bend only a front sector, easing to flat;
+    # that only makes sense for a fixed (non-rotating) brim shell or louvers.
+    droop_arc_deg: float = 360.0
     droop_hinge_radius: float = 0.115  # where the bend starts, from the hat centre
     stl: str | None = None             # optional watertight hat STL (fan annulus is carved out)
     stl_scale: float = 0.001

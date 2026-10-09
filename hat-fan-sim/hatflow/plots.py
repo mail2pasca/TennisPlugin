@@ -122,7 +122,7 @@ def summary_figure(path, cfg, geo, u_mean, result):
         f"Fan: {cfg.fan.exit_speed} m/s {cfg.fan.direction}, tilt {cfg.fan.tilt_inward_deg} deg inward,",
         f"     swirl {cfg.fan.swirl_ratio}, arc {cfg.fan.active_arc_deg} deg",
         f"     open area {r['fan_open_area_m2']*1e4:.0f} cm^2, flow {r['fan_flow_cfm']:.0f} CFM",
-        f"Brim front droop: {cfg.hat.front_droop_deg} deg over {cfg.hat.droop_arc_deg} deg arc",
+        f"Brim droop: {cfg.hat.droop_deg} deg" + ("" if cfg.hat.droop_arc_deg >= 360 else f" over front {cfg.hat.droop_arc_deg} deg"),
         f"Wind: {tuple(cfg.env.wind)} m/s",
         "", "Probe speeds (m/s):",
     ]
